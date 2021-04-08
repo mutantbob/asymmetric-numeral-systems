@@ -15,8 +15,8 @@ struct ANSTable {
 impl ANSTable {
     pub fn new(freqs: SymbolFrequencies) -> ANSTable {
         let frequencies = freqs.frequencies;
-        let sum_frequencies = //freqs.frequencies.iter().fold(0, |a,b| a+b);
-        frequencies.iter().sum();
+        let sum_frequencies = frequencies.iter().sum();
+        println!("sum_frequencies = {}", sum_frequencies);
 
         let mut transforms: Vec<Vec<u32>> = (0..256).map(|_| Vec::new()).collect();
         let mut backward: Vec<(u8, u32)> = Vec::new();
@@ -64,10 +64,12 @@ impl ANSTable {
         let phase = val % freq;
         let encoded = self.encode[symbol as usize][phase as usize];
         let rval = cycle * self.sum_frequencies + encoded;
-        println!(
-            "{} = {}*{} + {} ;  rval = {}*{} + {} = 0x{:x}",
-            val, freq, cycle, phase, self.sum_frequencies, cycle, encoded, rval
-        );
+        if false {
+            println!(
+                "{} = {}*{} + {} ;  rval = {}*{} + {} = 0x{:x}",
+                val, freq, cycle, phase, self.sum_frequencies, cycle, encoded, rval
+            );
+        }
         rval
     }
 
@@ -77,10 +79,12 @@ impl ANSTable {
         let phase = val % (freq as u64);
         let encoded = self.encode[symbol as usize][phase as usize];
         let rval = cycle * (self.sum_frequencies as u64) + (encoded as u64);
-        println!(
-            "{} = {}*{} + {} ;  rval = {}*{} + {} = 0x{:x}",
-            val, freq, cycle, phase, self.sum_frequencies, cycle, encoded, rval
-        );
+        if false {
+            println!(
+                "{} = {}*{} + {} ;  rval = {}*{} + {} = 0x{:x}",
+                val, freq, cycle, phase, self.sum_frequencies, cycle, encoded, rval
+            );
+        }
         rval
     }
 
@@ -90,17 +94,19 @@ impl ANSTable {
 
         let (symbol, tmp) = self.decode[phase as usize];
         let rval = cycle * self.frequencies[symbol as usize] + tmp;
-        println!(
-            "{} = {}*{} + {}; rval = {}*{} + {} = 0x{:x}",
-            val,
-            self.sum_frequencies,
-            cycle,
-            phase,
-            rval,
-            self.frequencies[symbol as usize],
-            tmp,
-            rval
-        );
+        if false {
+            println!(
+                "{} = {}*{} + {}; rval = {}*{} + {} = 0x{:x}",
+                val,
+                self.sum_frequencies,
+                cycle,
+                phase,
+                rval,
+                self.frequencies[symbol as usize],
+                tmp,
+                rval
+            );
+        }
         (symbol, rval)
     }
     pub fn decode64(&self, val: u64) -> (u8, u64) {
@@ -111,10 +117,12 @@ impl ANSTable {
         let (symbol, tmp) = self.decode[phase as usize];
         let sym_freq = self.frequencies[symbol as usize];
         let rval = cycle * (sym_freq as u64) + (tmp as u64);
-        println!(
-            "{} = {}*{} + {}; rval = {}*{} + {} = 0x{:x}",
-            val, sum_frequencies, cycle, phase, rval, sym_freq, tmp, rval
-        );
+        if false {
+            println!(
+                "{} = {}*{} + {}; rval = {}*{} + {} = 0x{:x}",
+                val, sum_frequencies, cycle, phase, rval, sym_freq, tmp, rval
+            );
+        }
         (symbol, rval)
     }
 }
@@ -125,37 +133,72 @@ fn main() -> Result<(), Error> {
     let args = env::args();
     let mut args = args.skip(1);
 
-    let fname = args.next().unwrap();
-    println!("symbol frequency file {}", &fname);
+    {
+        let fname = args.next().unwrap();
+        println!("symbol frequency file {}", &fname);
+        demonstration1(&fname, b"Robert")?;
+    }
+
+    {
+        let fname = "../test-data/out/mpeg.bin";
+        println!("symbol frequency file {}", fname);
+        demonstration1(fname, b"Robert")?;
+    }
+
+    {
+        let fname = "../test-data/out/atmm.bin";
+        println!("symbol frequency file {}", fname);
+        demonstration1(fname, b"Robert")?;
+    }
+
+    Ok(())
+}
+
+fn demonstration1(fname: &str, test_data: &[u8]) -> Result<(), Error> {
     let mut symbol_file = File::open(fname)?;
     let frequencies = SymbolFrequencies::parse_binary_symbol_table(&mut symbol_file)?;
 
     let ans_table = ANSTable::new(frequencies);
 
-    let x = ans_table.append_encode(0, b'R');
-    let x = ans_table.append_encode(x, b'o');
-    let x = ans_table.append_encode(x, b'b');
-    let x = ans_table.append_encode(x, b'e');
-    let x = ans_table.append_encode(x, b'r');
-    let x = ans_table.append_encode64(x as u64, b't');
+    let x = simple_encode(&ans_table, test_data);
 
-    println!("x={}", x);
+    let bit_count = count_bits(x);
+
+    println!("x={}\trequires {} bits", x, bit_count);
 
     let mut out: String = Default::default();
-    let (symbol, x) = ans_table.decode64(x);
-    out.insert(0, symbol as char);
-    let (symbol, x) = ans_table.decode32(x as u32);
-    out.insert(0, symbol as char);
-    let (symbol, x) = ans_table.decode32(x as u32);
-    out.insert(0, symbol as char);
-    let (symbol, x) = ans_table.decode32(x as u32);
-    out.insert(0, symbol as char);
-    let (symbol, x) = ans_table.decode32(x as u32);
-    out.insert(0, symbol as char);
-    let (symbol, x) = ans_table.decode32(x as u32);
-    out.insert(0, symbol as char);
+    for symbol in simple_decode(&ans_table, x) {
+        out.push(symbol as char);
+    }
 
-    println!("final val = {} (should be 0)", x);
     println!("reconstructed : {}", out);
+
     Ok(())
+}
+
+fn simple_encode(ans_table: &ANSTable, symbols: &[u8]) -> u64 {
+    let mut x = 0;
+    for &symbol in symbols {
+        x = ans_table.append_encode64(x, symbol);
+    }
+    x
+}
+
+fn simple_decode(ans_table: &ANSTable, mut val: u64) -> Vec<u8> {
+    let mut rval = Vec::new();
+    while val > 0 {
+        let (symbol, new_val) = ans_table.decode64(val);
+        rval.insert(0, symbol);
+        val = new_val;
+    }
+    rval
+}
+
+fn count_bits(mut val: u64) -> u32 {
+    let mut rval = 0;
+    while val != 0 {
+        rval += 1;
+        val >>= 1;
+    }
+    rval
 }
