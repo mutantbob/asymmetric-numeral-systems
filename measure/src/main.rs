@@ -9,12 +9,14 @@ Usage:
  */
 
 extern crate byteorder;
+extern crate symbol_table;
 
 use byteorder::BigEndian;
 use byteorder::WriteBytesExt;
 use std::env;
 use std::fs::File;
-use std::io::{Error, Read, Write};
+use std::io::{Error, Write};
+use symbol_table::SymbolFrequencies;
 
 trait SymbolTableSink {
     fn output(&mut self, table: &[u32]) -> Result<(), Error>;
@@ -88,33 +90,6 @@ struct Mission {
 }
 
 //
-
-struct SymbolFrequencies {
-    frequencies: [u32; 256],
-}
-
-impl SymbolFrequencies {
-    fn new() -> SymbolFrequencies {
-        SymbolFrequencies {
-            frequencies: [0; 256],
-        }
-    }
-
-    fn scan_file(&mut self, f: &mut dyn Read) -> Result<(), Error> {
-        let mut buffer = [0; 4 << 10];
-
-        loop {
-            let count = f.read(&mut buffer)?;
-            if count == 0 {
-                break;
-            }
-            for &symbol in &buffer[..count] {
-                self.frequencies[symbol as usize] += 1;
-            }
-        }
-        Ok(())
-    }
-}
 
 //
 

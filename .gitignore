@@ -1,1 +1,7 @@
-/target
+target
+/test-data/out
+\#*#
+.#*
+*~
+.idea
+*.iml
