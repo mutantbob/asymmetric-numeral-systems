@@ -1,3 +1,7 @@
+extern crate byteorder;
+
+use byteorder::BigEndian;
+use byteorder::ReadBytesExt;
 use std::io::{Error, Read};
 
 pub struct SymbolFrequencies {
@@ -24,6 +28,12 @@ impl SymbolFrequencies {
             }
         }
         Ok(())
+    }
+
+    pub fn parse_binary_symbol_table(src: &mut dyn Read) -> Result<SymbolFrequencies, Error> {
+        let mut frequencies = [0; 256];
+        src.read_u32_into::<BigEndian>(&mut frequencies)?;
+        Ok(SymbolFrequencies { frequencies })
     }
 }
 
