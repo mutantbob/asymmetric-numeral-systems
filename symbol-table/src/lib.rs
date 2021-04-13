@@ -36,6 +36,16 @@ impl SymbolFrequencies {
         src.read_u32_into::<BigEndian>(&mut frequencies)?;
         Ok(SymbolFrequencies { frequencies })
     }
+
+    pub fn missing_symbols_become_one(src: &SymbolFrequencies) -> SymbolFrequencies {
+        let mut new_frequencies: [u32; 256] = [0; 256];
+        for (symbol, &freq) in src.frequencies.iter().enumerate() {
+            new_frequencies[symbol] = if freq > 0 { freq } else { 1 };
+        }
+        SymbolFrequencies {
+            frequencies: new_frequencies,
+        }
+    }
 }
 
 impl Default for SymbolFrequencies {

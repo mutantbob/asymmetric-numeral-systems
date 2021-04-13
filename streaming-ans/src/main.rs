@@ -237,7 +237,7 @@ fn main() -> Result<(), Error> {
                 &message4,
             ];
             for message in &messages {
-                let result = panic::catch_unwind(|| demo_suite1(symbol_fname, message));
+                let result = panic::catch_unwind(|| demo_suite1(symbol_fname, message, true));
                 match result {
                     Ok(result) => {
                         if let Err(e) = result {
@@ -255,23 +255,23 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_suite1(symbol_fname: &str, message: &[u8]) -> Result<(), Error> {
+fn demo_suite1(symbol_fname: &str, message: &[u8], backfill_missing_symbols: bool) -> Result<(), Error> {
     let message1 = message;
     println!("  message.len() = {}", message.len());
     //explosion1(fname)?;
 
     if false {
-        demonstration1(symbol_fname, message1, 16, 2)?;
-        demonstration1(symbol_fname, message1, 32, 2)?;
+        demonstration1(symbol_fname, message1, 16, 2, backfill_missing_symbols)?;
+        demonstration1(symbol_fname, message1, 32, 2, backfill_missing_symbols)?;
     }
 
     //
     {
         let payload = message;
         //let payload:&[u8] = &payload;
-        demonstration1(symbol_fname, &payload, 16, 2)?;
-        demonstration1(symbol_fname, &payload, 24, 2)?;
-        demonstration1(symbol_fname, &payload, 32, 2)?;
+        demonstration1(symbol_fname, &payload, 16, 2, backfill_missing_symbols)?;
+        demonstration1(symbol_fname, &payload, 24, 2, backfill_missing_symbols)?;
+        demonstration1(symbol_fname, &payload, 32, 2, backfill_missing_symbols)?;
     }
 
     Ok(())
@@ -289,10 +289,17 @@ fn demonstration1(
     message: &[u8],
     underflow_bits: u8,
     bytes_to_stream: u8,
+    backfill_missing_symbols: bool,
 ) -> Result<(), Error> {
     println!("demonstration(,,{})", underflow_bits);
     let mut symbol_file = File::open(symbol_fname)?;
     let symbols = SymbolFrequencies::parse_binary_symbol_table(&mut symbol_file)?;
+
+    let symbols = if backfill_missing_symbols {
+        SymbolFrequencies::missing_symbols_become_one(&symbols)
+    } else {
+        symbols
+    };
 
     let symbols = scale_frequencies(16, &symbols, false);
 
