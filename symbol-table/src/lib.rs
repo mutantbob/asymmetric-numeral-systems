@@ -49,9 +49,9 @@ impl Default for SymbolFrequencies {
 //
 
 pub struct ANSTableUniform {
-    frequencies: [u32; 256],
-    sum_frequencies: u32,
-    encode: Vec<Vec<u32>>,
+    pub frequencies: [u32; 256],
+    pub sum_frequencies: u32,
+    pub encode: Vec<Vec<u32>>,
     decode: Vec<(u8, u32)>,
     verbose: bool,
 }
@@ -60,7 +60,7 @@ impl ANSTableUniform {
     pub fn new(freqs: SymbolFrequencies) -> ANSTableUniform {
         let frequencies = freqs.frequencies;
         let sum_frequencies = frequencies.iter().sum();
-        println!("sum_frequencies = {}", sum_frequencies);
+        //println!("sum_frequencies = {}", sum_frequencies);
 
         let mut transforms: Vec<Vec<u32>> = (0..256).map(|_| Vec::new()).collect();
         let mut backward: Vec<(u8, u32)> = Vec::new();
@@ -146,9 +146,15 @@ impl ANSTableUniform {
 
     pub fn append_encode64(&self, val: u64, symbol: u8) -> u64 {
         let freq = self.frequencies[symbol as usize];
+        assert!(
+            freq != 0,
+            "symbol {} does not appear in symbol table",
+            symbol
+        );
         let cycle = val / (freq as u64);
         let phase = val % (freq as u64);
         let encoded = self.encode[symbol as usize][phase as usize];
+        //println!("debug for {}@{} :\t {:x}*{}+{}", symbol, freq, cycle, self.sum_frequencies, encoded);
         let rval = cycle * (self.sum_frequencies as u64) + (encoded as u64);
         if self.verbose {
             ANSTableUniform::log_encode(
