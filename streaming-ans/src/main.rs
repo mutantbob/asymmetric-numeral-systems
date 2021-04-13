@@ -73,14 +73,14 @@ impl StreamingANSUniform {
         }
     }
 
-    pub fn encode<'a, I>(&self, message: I) -> Vec<u8>
+    pub fn encode<'a, I>(&self, message_backwards: I) -> Vec<u8>
     where
-        I: Iterator<Item = &'a u8> + DoubleEndedIterator,
+        I: Iterator<Item = &'a u8>
     {
         let mut x = 0;
 
         let mut rval: Vec<u8> = Vec::new();
-        for &symbol in message.rev() {
+        for &symbol in message_backwards {
             //println!("symbol = {}", symbol);
             let mut new_x = self.table.append_encode64(x, symbol);
             if new_x >> (self.underflow_bits + 8 * self.bytes_to_stream) != 0 {
@@ -314,7 +314,7 @@ fn demonstration1a(
     message: &[u8],
     underflow_bits: u8,
 ) -> Result<(), Error> {
-    let compressed = uans.encode(message.iter());
+    let compressed = uans.encode(message.iter().rev());
 
     println!(
         "compressed to {} bytes (UB={})",
