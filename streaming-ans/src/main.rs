@@ -73,6 +73,7 @@ impl StreamingANSUniform {
         }
     }
 
+    /// for `message_backwards` you probably want something like `message.iter().rev()`
     pub fn encode<'a, I>(&self, message_backwards: I) -> Vec<u8>
     where
         I: Iterator<Item = &'a u8>
@@ -80,6 +81,7 @@ impl StreamingANSUniform {
         let mut x = 0;
 
         let mut rval: Vec<u8> = Vec::new();
+        let mut rval_sink = |byte| rval.push(byte);
         for &symbol in message_backwards {
             //println!("symbol = {}", symbol);
             let mut new_x = self.table.append_encode64(x, symbol);
@@ -87,7 +89,7 @@ impl StreamingANSUniform {
                 if self.verbose {
                     println!("{:x}.{} overflows to {:x}", x, symbol as char, new_x)
                 }
-                x = self.push_quantum(x, &mut rval);
+                x = self.push_quantum(x, &mut rval_sink);
                 new_x = self.table.append_encode64(x, symbol);
             }
             if self.verbose {
@@ -98,21 +100,71 @@ impl StreamingANSUniform {
         //println!("exhausted bytes to encode");
 
         while x != 0 {
-            x = self.push_quantum(x, &mut rval);
+            x = self.push_quantum(x, &mut rval_sink);
         }
 
         rval
     }
 
-    fn push_quantum(&self, mut x: u64, sink: &mut Vec<u8>) -> u64 {
+    /// for `message_backwards` you probably want something like `message.iter().rev()`
+    pub fn encode_to_sink<'a, I, E>(
+        &self,
+        message_backwards: I,
+        sink: &mut dyn FnMut(u8) -> Result<(), E>,
+    ) -> Result<(), E>
+    where
+        I: Iterator<Item = &'a u8>,
+    {
+        let mut x = 0;
+
+        for &symbol in message_backwards {
+            //println!("symbol = {}", symbol);
+            let mut new_x = self.table.append_encode64(x, symbol);
+            if new_x >> (self.underflow_bits + 8 * self.bytes_to_stream) != 0 {
+                if self.verbose {
+                    println!("{:x}.{} overflows to {:x}", x, symbol as char, new_x)
+                }
+                x = self.push_quantum2(x, sink)?;
+                new_x = self.table.append_encode64(x, symbol);
+            }
+            if self.verbose {
+                println!("{:x}.{} becomes {:x}", x, symbol as char, new_x);
+            }
+            x = new_x;
+        }
+        //println!("exhausted bytes to encode");
+
+        while x != 0 {
+            x = self.push_quantum2(x, sink)?;
+        }
+
+        Ok(())
+    }
+
+    fn push_quantum(&self, mut x: u64, sink: &mut dyn FnMut(u8)) -> u64 {
         for _i in 0..self.bytes_to_stream {
             if self.verbose {
                 println!("push LSB of {:x} to stream", x);
             }
-            sink.push(x as u8);
+            sink(x as u8);
             x >>= 8;
         }
         x
+    }
+
+    fn push_quantum2<E>(
+        &self,
+        mut x: u64,
+        sink: &mut dyn FnMut(u8) -> Result<(), E>,
+    ) -> Result<u64, E> {
+        for _i in 0..self.bytes_to_stream {
+            if self.verbose {
+                println!("push LSB of {:x} to stream", x);
+            }
+            sink(x as u8)?;
+            x >>= 8;
+        }
+        Ok(x)
     }
 
     pub fn decode(&self, stream: &[u8]) -> Vec<u8> {
@@ -255,7 +307,11 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_suite1(symbol_fname: &str, message: &[u8], backfill_missing_symbols: bool) -> Result<(), Error> {
+fn demo_suite1(
+    symbol_fname: &str,
+    message: &[u8],
+    backfill_missing_symbols: bool,
+) -> Result<(), Error> {
     let message1 = message;
     println!("  message.len() = {}", message.len());
     //explosion1(fname)?;
