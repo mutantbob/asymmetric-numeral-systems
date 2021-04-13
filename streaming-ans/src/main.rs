@@ -48,7 +48,7 @@ impl StreamingANSUniform {
 
         let max_working_x = (1u64 << (underflow_bits + bits_to_stream)) - 1;
         for (symbol, &frequency) in table.frequencies.iter().enumerate() {
-            if frequency <= 0 {
+            if frequency == 0 {
                 continue;
             }
             if frequency > 0 && table.sum_frequencies > (frequency << (bits_to_stream)) {
@@ -63,20 +63,13 @@ impl StreamingANSUniform {
                 panic!("symbol {} frequency is small enough that encoding could jump by too many bits {:x}.{} = {:x} >= (1<<{})",
                        symbol, max_working_x, symbol, x2, max_result_bits);
             }
-
-            if false && 41 == symbol {
-                println!(
-                    "symbol={}, freq={}, max_x = 0x{:x}, cycle={}, jump={}, x2=0x{:x}",
-                    symbol, frequency, max_working_x, cycle, jump, x2
-                );
-            }
         }
     }
 
     /// for `message_backwards` you probably want something like `message.iter().rev()`
     pub fn encode<'a, I>(&self, message_backwards: I) -> Vec<u8>
     where
-        I: Iterator<Item = &'a u8>
+        I: Iterator<Item = &'a u8>,
     {
         let mut x = 0;
 
@@ -242,34 +235,6 @@ impl StreamingANSUniform {
 
 //
 
-struct ResultWrapper<'a> {
-    message: std::slice::Iter<'a, u8>,
-}
-
-impl<'a> ResultWrapper<'a> {
-    pub fn new(message: &'a [u8]) -> ResultWrapper<'a> {
-        ResultWrapper {
-            message: message.iter(),
-        }
-    }
-}
-
-impl<'a> Iterator for ResultWrapper<'a> {
-    type Item = Result<u8, Error>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.message.next().map(|&val| Ok(val))
-    }
-}
-
-impl<'a> DoubleEndedIterator for ResultWrapper<'a> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.message.next_back().map(|&val| Ok(val))
-    }
-}
-
-//
-
 fn main() -> Result<(), Error> {
     {
         let message2 = slurp("../test-data/at-the-mountains-of-madness.html")?;
@@ -314,7 +279,6 @@ fn demo_suite1(
 ) -> Result<(), Error> {
     let message1 = message;
     println!("  message.len() = {}", message.len());
-    //explosion1(fname)?;
 
     if false {
         demonstration1(symbol_fname, message1, 16, 2, backfill_missing_symbols)?;
@@ -386,22 +350,6 @@ fn demonstration1a(
     }
 
     assert!(uncompressed == message, "encode/decode mismatch");
-    Ok(())
-}
-
-fn explosion1(symbol_fname: &str) -> Result<(), Error> {
-    let mut symbol_file = File::open(symbol_fname)?;
-    let symbols = SymbolFrequencies::parse_binary_symbol_table(&mut symbol_file)?;
-
-    let symbols = scale_frequencies(16, &symbols, false);
-
-    let ans = ANSTableUniform::new(symbols);
-
-    StreamingANSUniform::panic_if_unbalanced(&ans, 40, 2);
-
-    let x = ans.append_encode64(0x377a794fef0e04, 41);
-    println!("x = {}", x);
-
     Ok(())
 }
 
