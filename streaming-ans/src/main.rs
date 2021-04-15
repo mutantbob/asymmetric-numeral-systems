@@ -3,7 +3,7 @@ extern crate symbol_table;
 use std::fs::File;
 use std::io::{Error, Read, Write};
 use std::{io, panic};
-use symbol_table::{SymbolFrequencies, StreamingANSUniform};
+use symbol_table::{StreamingANSUniform, SymbolFrequencies};
 
 //
 

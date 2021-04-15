@@ -62,8 +62,8 @@ pub struct ANSTableUniform {
     pub frequencies: [u32; 256],
     pub sum_frequencies: u32,
     pub encode: Vec<Vec<u32>>,
-    decode: Vec<(u8, u32)>,
-    verbose: bool,
+    pub decode: Vec<(u8, u32)>,
+    pub verbose: bool,
 }
 
 impl ANSTableUniform {
@@ -72,10 +72,27 @@ impl ANSTableUniform {
         let sum_frequencies = frequencies.iter().sum();
         //println!("sum_frequencies = {}", sum_frequencies);
 
+        let (transforms, backward) =
+            ANSTableUniform::build_tables(&frequencies, sum_frequencies, sum_frequencies / 2);
+
+        ANSTableUniform {
+            frequencies,
+            sum_frequencies,
+            encode: transforms,
+            decode: backward,
+            verbose: false,
+        }
+    }
+
+    pub fn build_tables(
+        frequencies: &[u32; 256],
+        sum_frequencies: u32,
+        accum_start: u32,
+    ) -> (Vec<Vec<u32>>, Vec<(u8, u32)>) {
         let mut transforms: Vec<Vec<u32>> = (0..256).map(|_| Vec::new()).collect();
         let mut backward: Vec<(u8, u32)> = Vec::new();
 
-        let mut accum = [0; 256];
+        let mut accum = [accum_start; 256];
 
         let mut cursor = 0;
 
@@ -101,18 +118,11 @@ impl ANSTableUniform {
         );
 
         for (i, &a) in accum.iter().enumerate() {
-            if a != 0 {
+            if a != accum_start {
                 println!("unexpected accum[{}] == {}", i, a);
             }
         }
-
-        ANSTableUniform {
-            frequencies,
-            sum_frequencies,
-            encode: transforms,
-            decode: backward,
-            verbose: false,
-        }
+        (transforms, backward)
     }
 
     pub fn append_encode(&self, val: u32, symbol: u8) -> u32 {
