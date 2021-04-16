@@ -6,7 +6,7 @@ all: out/atmm-freq.png out/atmm.bin \
 	out/dq-freq.png out/dq.bin \
 	out/mpeg-freq.png out/mpeg.bin \
 	out/encoder-phase.png \
-	out/table-variations.png out/table-variations2.png
+	out/table-variations.png out/table-variations2.png out/table-variations3.png
 
 out/atmm.txt:
 	$(MEASURE) at-the-mountains-of-madness.html -O $@
@@ -32,5 +32,10 @@ out/%-freq.png: out/%.txt
 out/encoder-phase.png:
 	./graph-encoder-phase.sh $@
 
+out/table-variations3.png: /tmp/ra.txt /tmp/rb.txt /tmp/rc.txt /tmp/re.txt /tmp/rf.txt
+
 out/table-variations.png out/table-variations2.png:
 	./graph-table-variations.sh out/table-variations.png out/table-variations2.png
+
+out/table-variations3.png:
+	./graph-table-variations-4.sh out/table-variations3.png

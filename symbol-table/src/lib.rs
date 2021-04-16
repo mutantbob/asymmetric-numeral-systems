@@ -308,8 +308,8 @@ impl StreamingANSUniform {
 
     /// for `message_backwards` you probably want something like `message.iter().rev()`
     pub fn encode<'a, I>(&self, message_backwards: I) -> Vec<u8>
-        where
-            I: Iterator<Item = &'a u8>,
+    where
+        I: Iterator<Item = &'a u8>,
     {
         let mut x = 0;
 
@@ -345,8 +345,8 @@ impl StreamingANSUniform {
         message_backwards: I,
         sink: &mut dyn FnMut(u8) -> Result<(), E>,
     ) -> Result<(), E>
-        where
-            I: Iterator<Item = &'a u8>,
+    where
+        I: Iterator<Item = &'a u8>,
     {
         let mut x = 0;
 
