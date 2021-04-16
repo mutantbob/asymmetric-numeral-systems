@@ -13,6 +13,14 @@ version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "ordering-exp-2symbol-20bit"
+version = "0.1.0"
+dependencies = [
+ "ans-ordering 0.1.0",
+ "symbol-table 0.1.0",
+]
+
+[[package]]
 name = "symbol-table"
 version = "0.1.0"
 dependencies = [
