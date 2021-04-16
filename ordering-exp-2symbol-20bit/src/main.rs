@@ -1,7 +1,7 @@
-use ans_ordering::{binary_message_list, catalog_encoding_results, polarity_a, polarity_b};
+use ans_ordering::{binary_message_list, catalog_encoding_results, polarity_a, polarity_b, polarity_c};
 use std::io::Error;
 
-/// generate a catalog of the encoded result for all the 20bit messages using two different ANS encoding tables
+/// generate a catalog of the encoded result for all the 20bit messages using three different ANS encoding tables
 fn main() -> Result<(), Error> {
     let num_bits = 20;
 
@@ -15,6 +15,12 @@ fn main() -> Result<(), Error> {
         &mut binary_message_list(num_bits),
         &polarity_b(),
         "/tmp/b.txt",
+    )?;
+
+    catalog_encoding_results(
+        &mut binary_message_list(num_bits),
+        &polarity_c(),
+        "/tmp/c.txt",
     )?;
 
     Ok(())

@@ -134,6 +134,20 @@ pub fn polarity_b() -> ANSTableUniform {
     }
 }
 
+/// specially constructed to test how the ordering of the uniform encoding tables affects compression efficiency
+pub fn polarity_c() -> ANSTableUniform {
+    let mut frequencies = [0; 256];
+    frequencies[0] = 3;
+    frequencies[1] = 1;
+    ANSTableUniform {
+        frequencies,
+        sum_frequencies: 4,
+        encode: vec![vec![0, 1, 2], vec![3]], // this is a special encoding that is different from our original calculations
+        decode: vec![],
+        verbose: false,
+    }
+}
+
 pub fn binary_expand(packed_bits: i32, num_bits: u8) -> Vec<u8> {
     (0..num_bits)
         .map(|pos| 0 != packed_bits & (1 << pos))
