@@ -306,12 +306,17 @@ impl StreamingANSUniform {
         }
     }
 
-    /// for `message_backwards` you probably want something like `message.iter().rev()`
-    pub fn encode<'a, I>(&self, message_backwards: I) -> Vec<u8>
+    /// For `message_backwards` you probably want something like `message.iter().rev()`.
+    ///
+    /// For `initial_value` you probably want `1`, and you absolutely do not want `0`.
+    pub fn encode<'a, I>(&self, message_backwards: I, initial_value: u64) -> Vec<u8>
     where
         I: Iterator<Item = &'a u8>,
     {
-        let mut x = 0;
+        if initial_value == 0 {
+            panic!("initial_value for encode() must not be {}", initial_value);
+        }
+        let mut x = initial_value;
 
         let mut rval: Vec<u8> = Vec::new();
         let mut rval_sink = |byte| rval.push(byte);
@@ -344,11 +349,15 @@ impl StreamingANSUniform {
         &self,
         message_backwards: I,
         sink: &mut dyn FnMut(u8) -> Result<(), E>,
+        initial_value: u64,
     ) -> Result<(), E>
     where
         I: Iterator<Item = &'a u8>,
     {
-        let mut x = 0;
+        if initial_value == 0 {
+            panic!("initial_value for encode() must not be {}", initial_value);
+        }
+        let mut x = initial_value;
 
         for &symbol in message_backwards {
             //println!("symbol = {}", symbol);
@@ -400,8 +409,12 @@ impl StreamingANSUniform {
         Ok(x)
     }
 
-    pub fn decode(&self, stream: &[u8]) -> Vec<u8> {
+    /// `eos_marker` is the same value passed to `encode()` as `initial_value`
+    pub fn decode(&self, stream: &[u8], eos_marker: u64) -> Result<Vec<u8>, String> {
         //let mut cursor: i64 = (stream.len() - 1) as i64;
+        if eos_marker == 0 {
+            panic!("eos_marker for decode() must not be {}", eos_marker);
+        }
 
         let mut iter = stream.iter().rev();
 
@@ -431,16 +444,19 @@ impl StreamingANSUniform {
             x = new_x;
         }
 
-        while x != 0 {
+        while x != eos_marker {
             let (symbol, new_x) = self.table.decode64(x);
             if self.verbose {
                 println!("{:x} becomes {:x}.'{}'", x, new_x, symbol as char);
             }
             rval.push(symbol);
+            if new_x < 1 {
+                return Err("failed to reach EOS marker".to_string());
+            }
             x = new_x;
         }
 
-        rval
+        Ok(rval)
     }
 
     fn read_quantum(&self, iter: &mut dyn Iterator<Item = &u8>, mut x: u64) -> Option<u64> {
@@ -473,10 +489,34 @@ impl StreamingANSUniform {
     }
 }
 
+//
+//
+//
+
 #[cfg(test)]
 mod tests {
+    use crate::{StreamingANSUniform, SymbolFrequencies};
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test1() {
+        let mut freqs = SymbolFrequencies::new();
+        freqs.frequencies[0] = 1;
+        freqs.frequencies[1] = 3;
+
+        let ansu = StreamingANSUniform::new(freqs, 16, 2);
+
+        let iv = 1;
+        {
+            let orig = vec![0, 0];
+            let encoded = ansu.encode(orig.iter().rev(), iv);
+            let decoded = ansu.decode(&encoded, iv).unwrap();
+            assert_eq!(orig, decoded);
+        }
+        {
+            let orig = vec![1, 1];
+            let encoded = ansu.encode(orig.iter().rev(), iv);
+            let decoded = ansu.decode(&encoded, iv).unwrap();
+            assert_eq!(orig, decoded);
+        }
     }
 }

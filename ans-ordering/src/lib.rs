@@ -78,7 +78,7 @@ pub fn probability_of_message(ansu: &ANSTableUniform, message: &[u8]) -> f64 {
 }
 
 pub fn simple_encode(ansu: &ANSTableUniform, message: &[u8]) -> u64 {
-    let mut x = 0;
+    let mut x = 1;
     for &symbol in message {
         x = ansu.append_encode64(x, symbol);
     }

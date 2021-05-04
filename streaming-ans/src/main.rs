@@ -106,7 +106,8 @@ fn demonstration1a(
     message: &[u8],
     underflow_bits: u8,
 ) -> Result<(), Error> {
-    let compressed = uans.encode(message.iter().rev());
+    let iv = 1;
+    let compressed = uans.encode(message.iter().rev(), iv);
 
     println!(
         "compressed to {} bytes (UB={})",
@@ -114,7 +115,7 @@ fn demonstration1a(
         underflow_bits
     );
 
-    let uncompressed = uans.decode(&compressed);
+    let uncompressed = uans.decode(&compressed, iv).unwrap();
 
     if false {
         io::stdout().write_all(&uncompressed)?;
