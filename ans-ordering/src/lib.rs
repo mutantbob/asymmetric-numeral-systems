@@ -63,7 +63,7 @@ fn fname_for_unweighted(src: &str) -> String {
     }
 }
 
-fn probability_of_message(ansu: &ANSTableUniform, message: &[u8]) -> f64 {
+pub fn probability_of_message(ansu: &ANSTableUniform, message: &[u8]) -> f64 {
     let mut rval = 1f64;
     let sum_frequencies = ansu.sum_frequencies as f64;
     for &symbol in message {

@@ -1,4 +1,6 @@
-use ans_ordering::{binary_message_list, catalog_encoding_results, polarity_a, polarity_b, polarity_c};
+use ans_ordering::{
+    binary_message_list, catalog_encoding_results, polarity_a, polarity_b, polarity_c,
+};
 use std::io::Error;
 
 /// generate a catalog of the encoded result for all the 20bit messages using three different ANS encoding tables
