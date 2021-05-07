@@ -56,7 +56,7 @@ fn demonstration1(fname: &str, test_data: &[u8]) -> Result<(), Error> {
 }
 
 fn simple_encode(ans_table: &ANSTableUniform, symbols: &[u8]) -> u64 {
-    let mut x = 0;
+    let mut x = 1;
     for &symbol in symbols {
         x = ans_table.append_encode64(x, symbol);
     }
@@ -65,7 +65,7 @@ fn simple_encode(ans_table: &ANSTableUniform, symbols: &[u8]) -> u64 {
 
 fn simple_decode(ans_table: &ANSTableUniform, mut val: u64) -> Vec<u8> {
     let mut rval = Vec::new();
-    while val > 0 {
+    while val > 1 {
         let (symbol, new_val) = ans_table.decode64(val);
         rval.insert(0, symbol);
         val = new_val;
