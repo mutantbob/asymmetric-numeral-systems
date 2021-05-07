@@ -7,26 +7,27 @@ use symbol_table::{ANSTableUniform, SymbolFrequencies};
 
 //
 
+/// Encode a test string using different symbol tables constructed from different source documents.
+/// The symbol tables are built using the `measure` app.
 fn main() -> Result<(), Error> {
     let args = env::args();
-    let mut args = args.skip(1);
-
-    {
-        let fname = args.next().unwrap();
-        println!("symbol frequency file {}", &fname);
-        demonstration1(&fname, b"Robert")?;
+    let args = args.skip(1);
+    let mut symbol_tables: Vec<String> = args.collect();
+    if symbol_tables.is_empty() {
+        symbol_tables = [
+            "../test-data/out/atmm.bin",
+            "../test-data/out/dq.bin",
+            "../test-data/out/mpeg.bin",
+        ]
+        .iter()
+        .map(|&str| str.to_string())
+        .collect()
     }
 
-    {
-        let fname = "../test-data/out/mpeg.bin";
-        println!("symbol frequency file {}", fname);
-        demonstration1(fname, b"Robert")?;
-    }
-
-    {
-        let fname = "../test-data/out/atmm.bin";
-        println!("symbol frequency file {}", fname);
-        demonstration1(fname, b"Robert")?;
+    let test_data = b"Robert";
+    for symbol_table_fname in symbol_tables {
+        println!("symbol frequency file {}", symbol_table_fname);
+        demonstration1(&symbol_table_fname, test_data)?;
     }
 
     Ok(())
