@@ -9,6 +9,8 @@ use symbol_table::{StreamingANSUniform, SymbolFrequencies};
 
 fn main() -> Result<(), Error> {
     {
+        let backfill_missing_symbols = true;
+
         let message2 = slurp("../test-data/at-the-mountains-of-madness.html")?;
         let message3 = slurp("../test-data/dream-quest.html")?;
         let message4 = slurp("../test-data/iso13818-2.pdf")?;
@@ -26,7 +28,9 @@ fn main() -> Result<(), Error> {
                 &message4,
             ];
             for message in &messages {
-                let result = panic::catch_unwind(|| demo_suite1(symbol_fname, message, true));
+                let result = panic::catch_unwind(|| {
+                    demo_suite1(symbol_fname, message, backfill_missing_symbols)
+                });
                 match result {
                     Ok(result) => {
                         if let Err(e) = result {
