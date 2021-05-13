@@ -13,10 +13,11 @@ version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "ordering-exp-2symbol-20bit"
+name = "dump-encoding-tables-4symbol-phased"
 version = "0.1.0"
 dependencies = [
  "ans-ordering 0.1.0",
+ "byteorder 1.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "symbol-table 0.1.0",
 ]
 

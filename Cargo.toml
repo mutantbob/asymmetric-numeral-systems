@@ -1,0 +1,48 @@
+[package]
+name = "dump-encoding-tables-4symbol-phased"
+version = "0.1.0"
+authors = ["Bob Forsman <bob.forsman@ericsson.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+byteorder = "*"
+symbol-table = { path = "symbol-table" }
+ans-ordering = { path = "ans-ordering" }
+
+[[bin]]
+name="compare-ansu-phase"
+path="src/compare-ansu-phase.rs"
+
+[[bin]]
+name="dump-encoding-tables-4symbol-phased"
+path="src/dump-encoding-tables-4symbol-phased.rs"
+
+[[bin]]
+name="encoded-length-vs-probability"
+path="src/encoded_length_vs_probability.rs"
+
+[[bin]]
+name="measure"
+path="src/measure.rs"
+
+[[bin]]
+name="ordering-exp-10digit-4symbol"
+path="src/ordering-exp-10digit-4symbol.rs"
+
+[[bin]]
+name="ordering-exp-2symbol-20bit"
+path="src/ordering-exp-2symbol-20bit.rs"
+
+[[bin]]
+name="ordering-exp-2symbol"
+path="src/ordering-exp-2symbol.rs"
+
+[[bin]]
+name="short-ans"
+path="src/short-ans.rs"
+
+[[bin]]
+name="streaming-ans"
+path="src/streaming-ans.rs"

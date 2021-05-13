@@ -5,7 +5,7 @@ out2=$1; shift
 
 gnuplot <<EOF
 set term png notransparent size 1000,1000 font ",24"
-set xlabel "all possible messages, sorted by result" 
+set xlabel "all possible messages, sorted by result"
 set ylabel "numerical encoding result"
 set logscale y
 
