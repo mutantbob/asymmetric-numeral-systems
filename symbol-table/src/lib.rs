@@ -253,6 +253,9 @@ pub struct StreamingANSUniform {
 }
 
 impl StreamingANSUniform {
+    /// A good value for `underflow_bits` is 16
+    ///
+    /// A good value for `bytes_to_stream` is `underflow_bits/8`
     pub fn new(
         freqs: SymbolFrequencies,
         underflow_bits: u8,

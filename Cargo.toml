@@ -45,4 +45,8 @@ path="src/short-ans.rs"
 
 [[bin]]
 name="streaming-ans"
-path="src/streaming-ans.rs"
+path= "src/streaming_ans.rs"
+
+[[bin]]
+name="reduced-symbol-space"
+path="src/reduced-symbol-space.rs"
