@@ -1,6 +1,8 @@
 use ans_ordering::{catalog_encoding_results, quat_frequencies, quaternary_message_list};
+use std::error::Error;
 use std::fs::File;
-use std::io::{Error, Write};
+use std::io::Write;
+use std::thread;
 use symbol_table::ANSTableUniform;
 
 fn phased_quat_encoder(phase: u32) -> ANSTableUniform {
@@ -18,23 +20,31 @@ fn phased_quat_encoder(phase: u32) -> ANSTableUniform {
 }
 
 /// compare the encoding efficiency of various uniform ANS tables generaed using the various possible values for accum_start
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), Box<dyn Error>> {
     let num_quats = 10;
     let sum_frequencies = quat_frequencies().frequencies.iter().sum();
-    let mut results = Vec::new();
-    for phase in 0..sum_frequencies {
-        let ansu = phased_quat_encoder(phase);
 
-        let avg_bits = catalog_encoding_results(
-            &mut quaternary_message_list(num_quats),
-            &ansu,
-            &format!("/tmp/q{}.txt", phase),
-        )?;
-        results.push(avg_bits);
-    }
+    let workers: Vec<_> = (0..sum_frequencies)
+        .map(|phase| {
+            thread::spawn(move || {
+                let ansu = phased_quat_encoder(phase);
+
+                let report = catalog_encoding_results(
+                    &mut quaternary_message_list(num_quats),
+                    &ansu,
+                    &format!("/tmp/q{}.txt", phase),
+                )
+                .unwrap();
+                report
+            })
+        })
+        .collect();
+
+    let results = workers.into_iter().map(|handle| handle.join().unwrap());
 
     let mut f = File::create("/tmp/q-phases.txt")?;
-    for avg_bits in results {
+    for (avg_bits, report) in results {
+        print!("{}", report);
         writeln!(f, "{}", avg_bits)?;
     }
 

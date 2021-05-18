@@ -29,13 +29,19 @@ out/mpeg.txt:
 out/%-freq.png: out/%.txt
 	./bar-chart.sh $< $@
 
-out/encoder-phase.png:
+out/encoder-phase.png: /tmp/q-phases.txt
 	./graph-encoder-phase.sh $@
 
-out/table-variations3.png: /tmp/ra.txt /tmp/rb.txt /tmp/rc.txt /tmp/re.txt /tmp/rf.txt
+RELATIVES=/tmp/ra.txt /tmp/rb.txt /tmp/rc.txt /tmp/re.txt /tmp/rf.txt
 
-out/table-variations.png out/table-variations2.png:
+out/table-variations3.png: $(RELATIVES)
+
+out/table-variations.png out/table-variations2.png: $(ABSOLUTES)
 	./graph-table-variations.sh out/table-variations.png out/table-variations2.png
 
 out/table-variations3.png:
 	./graph-table-variations-4.sh out/table-variations3.png
+
+ABSOLUTES=/tmp/qa.txt /tmp/qb.txt /tmp/qc.txt /tmp/qe.txt /tmp/qf.txt
+$(RELATIVES): $(ABSOLUTES)
+	python3 ./compute-encoding-ratios.py $(ABSOLUTES) $(RELATIVES)

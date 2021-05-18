@@ -4,6 +4,7 @@
 name = "ans-ordering"
 version = "0.1.0"
 dependencies = [
+ "spmc 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "symbol-table 0.1.0",
 ]
 
@@ -22,6 +23,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "spmc"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "symbol-table"
 version = "0.1.0"
 dependencies = [
@@ -30,3 +36,4 @@ dependencies = [
 
 [metadata]
 "checksum byteorder 1.4.3 (registry+https://github.com/rust-lang/crates.io-index)" = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
+"checksum spmc 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "02a8428da277a8e3a15271d79943e80ccc2ef254e78813a166a08d65e4c3ece5"

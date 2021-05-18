@@ -58,6 +58,7 @@ impl Default for SymbolFrequencies {
 //
 //
 
+#[derive(Clone)]
 pub struct ANSTableUniform {
     pub frequencies: [u32; 256],
     pub sum_frequencies: u32,

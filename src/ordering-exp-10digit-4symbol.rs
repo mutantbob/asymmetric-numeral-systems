@@ -2,6 +2,8 @@ use ans_ordering::{
     catalog_encoding_results, debug_dump, quat_frequencies, quaternary_message_list,
 };
 use std::io::Error;
+use std::thread;
+use std::thread::JoinHandle;
 use symbol_table::{ANSTableUniform, SymbolFrequencies};
 
 /// Create sorted encoding catalogs of 10-digit encodings from a 4-symbol alphabet
@@ -9,42 +11,28 @@ use symbol_table::{ANSTableUniform, SymbolFrequencies};
 /// their efficiency.
 fn main() -> Result<(), Error> {
     let num_quats = 10;
+    let params: Vec<(Box<dyn Fn() -> ANSTableUniform + Send>, &'static str)> = vec![
+        (Box::new(quat_encoder_a), "/tmp/qa.txt"),
+        (Box::new(quat_encoder_b), "/tmp/qb.txt"),
+        (Box::new(quat_encoder_c), "/tmp/qc.txt"),
+        (Box::new(quat_encoder_d), "/tmp/qd.txt"),
+        (Box::new(quat_encoder_e), "/tmp/qe.txt"),
+        (Box::new(quat_encoder_f), "/tmp/qf.txt"),
+    ];
+    let workers = params
+        .into_iter()
+        .map(|(encoder, fname)| {
+            thread::spawn(move || {
+                catalog_encoding_results(&mut quaternary_message_list(num_quats), &encoder(), fname)
+                    .unwrap()
+            })
+        })
+        .collect::<Vec<JoinHandle<_>>>();
 
-    catalog_encoding_results(
-        &mut quaternary_message_list(num_quats),
-        &quat_encoder_a(),
-        "/tmp/qa.txt",
-    )?;
-
-    catalog_encoding_results(
-        &mut quaternary_message_list(num_quats),
-        &quat_encoder_b(),
-        "/tmp/qb.txt",
-    )?;
-
-    catalog_encoding_results(
-        &mut quaternary_message_list(num_quats),
-        &quat_encoder_c(),
-        "/tmp/qc.txt",
-    )?;
-
-    catalog_encoding_results(
-        &mut quaternary_message_list(num_quats),
-        &quat_encoder_d(),
-        "/tmp/qd.txt",
-    )?;
-
-    catalog_encoding_results(
-        &mut quaternary_message_list(num_quats),
-        &quat_encoder_e(),
-        "/tmp/qe.txt",
-    )?;
-
-    catalog_encoding_results(
-        &mut quaternary_message_list(num_quats),
-        &quat_encoder_f(),
-        "/tmp/qf.txt",
-    )?;
+    for worker in workers {
+        let (_avg_bits, report) = worker.join().unwrap();
+        print!("{}", report);
+    }
 
     Ok(())
 }

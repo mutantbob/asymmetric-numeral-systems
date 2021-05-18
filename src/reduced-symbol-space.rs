@@ -27,7 +27,7 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn analyze(symbol_fname: &str, message2: &Vec<u8>) -> Result<(), Error> {
+fn analyze(symbol_fname: &str, message2: &[u8]) -> Result<(), Error> {
     println!("orig\t{}", message2.len());
 
     {
@@ -38,9 +38,11 @@ fn analyze(symbol_fname: &str, message2: &Vec<u8>) -> Result<(), Error> {
 
         {
             let predicted = (message2.len() as f32) * (symbol_count as f32).ln() / 256f32.ln();
-            println!("#\t\tswitching to a flat symbol table of only used symbols will bring it near {}", predicted);
+            println!(
+                "#\t\tswitching to a flat symbol table of only used symbols will bring it near {}",
+                predicted
+            );
         }
-
 
         let freqs = SymbolFrequencies { frequencies };
         let ansu = StreamingANSUniform::new(freqs, 16, 2);
@@ -58,7 +60,10 @@ fn analyze(symbol_fname: &str, message2: &Vec<u8>) -> Result<(), Error> {
         let ansu = StreamingANSUniform::new(freqs, 16, 2);
         let encoded_well = ansu.encode(message2.iter().rev(), 1);
 
-        println!("#\t\tencoding with a symbol table with asymmetric frequencies\nmatching\t{}", encoded_well.len());
+        println!(
+            "#\t\tencoding with a symbol table with asymmetric frequencies\nmatching\t{}",
+            encoded_well.len()
+        );
     }
 
     Ok(())

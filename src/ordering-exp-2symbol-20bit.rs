@@ -1,10 +1,10 @@
 use ans_ordering::{
     binary_message_list, catalog_encoding_results, polarity_a, polarity_b, polarity_c,
 };
-use std::io::Error;
+use std::error::Error;
 
 /// generate a catalog of the encoded result for all the 20bit messages using three different ANS encoding tables
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), Box<dyn Error>> {
     let num_bits = 20;
 
     catalog_encoding_results(

@@ -1,13 +1,13 @@
 use ans_ordering::{binary_expand, debug_dump, polarity_a, polarity_b, simple_encode};
 use std::cmp::Ordering;
+use std::error::Error;
 use std::fs::File;
-use std::io::Error;
 use std::io::Write;
 
 /// Iterate through all the possible 16-bit messages and encode them using two different ANS tables.
 /// Output the resulting encdings to /tmp/a.txt and /tmp/b.txt and stdout.
 /// stdout can be used to build a scatter plot.
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), Box<dyn Error>> {
     let ansu_a = polarity_a();
     let ansu_b = polarity_b();
 

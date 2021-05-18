@@ -1,39 +1,32 @@
 extern crate symbol_table;
+extern crate spmc;
+
+use std::sync::mpsc;
 
 use std::fmt::{Display, Write};
 use std::fs::File;
-use std::io::Error;
 use std::io::Write as W2;
 use symbol_table::{ANSTableUniform, SymbolFrequencies};
+use std::thread;
+use std::error::Error;
 
 pub fn catalog_encoding_results(
     messages: &mut dyn Iterator<Item = Vec<u8>>,
     ansu: &ANSTableUniform,
     output_filename: &str,
-) -> Result<f64, Error> {
-    let mut list = Vec::new();
-    let mut sum_bits = 0f64;
-    let mut sum_prob = 0f64;
-    for message in messages {
-        let encoded = simple_encode(ansu, &message);
-        let probability = probability_of_message(ansu, &message);
-        let num_encoded_bits = (1.max(encoded) as f64).log2();
-        sum_bits += probability * num_encoded_bits;
-        sum_prob += probability;
-        if sum_bits.is_nan() {
-            panic!("sum_bits += {} * {}", probability, num_encoded_bits);
-        }
-        if sum_prob.is_nan() {
-            panic!("sum_prob += {}", probability);
-        }
-        list.push((probability, encoded));
-    }
+) -> Result<(f64,String), Box<dyn Error>> {
+    let mut report = String::new();
+    let (mut list, sum_bits, sum_prob) = match 2 {
+        0=> single_threaded_encode_loop(messages, ansu),
+        1=> multi_threaded_encode_loop(messages, ansu),
+        _=> multi_threaded_encode_loop_2(&messages.collect::<Vec<Vec<u8>>>(), ansu),
+    };
 
     let average_message_bits = sum_bits / sum_prob;
-    println!(
+    writeln!(report,
         "average encoded message length {} = {}/{} for {}",
         average_message_bits, sum_bits, sum_prob, output_filename
-    );
+    )?;
 
     list.sort_unstable_by(|(_, encoded_a), (_, encoded_b)| (*encoded_a).cmp(encoded_b));
 
@@ -51,7 +44,134 @@ pub fn catalog_encoding_results(
         writeln!(f, "{}", encoded)?;
     }
 
-    Ok(average_message_bits)
+    Ok((average_message_bits,report))
+}
+
+fn single_threaded_encode_loop(messages: &mut dyn Iterator<Item=Vec<u8>>, ansu: &ANSTableUniform) -> (Vec<(f64, u64)>, f64, f64) {
+    let mut list = Vec::new();
+    let mut sum_bits = 0f64;
+    let mut sum_prob = 0f64;
+
+    for message in messages {
+        let encoded = simple_encode(ansu, &message);
+        let probability = probability_of_message(ansu, &message);
+        let num_encoded_bits = (1.max(encoded) as f64).log2();
+        sum_bits += probability * num_encoded_bits;
+        sum_prob += probability;
+        if sum_bits.is_nan() {
+            panic!("sum_bits += {} * {}", probability, num_encoded_bits);
+        }
+        if sum_prob.is_nan() {
+            panic!("sum_prob += {}", probability);
+        }
+        list.push((probability, encoded));
+    }
+    (list, sum_bits, sum_prob)
+}
+
+/// holy crap, this is worse than the single-threaded version
+fn multi_threaded_encode_loop(messages: &mut dyn Iterator<Item=Vec<u8>>, ansu: &ANSTableUniform) -> (Vec<(f64, u64)>, f64, f64) {
+
+    let (mut tx1, rx1) = spmc::channel::<Vec<u8>>();
+    let (tx2, rx2) = mpsc::channel();
+
+    let num_threads=8;
+    let _workers:Vec<thread::JoinHandle<_>> = (0..num_threads).map(|_| {
+        let rx = rx1.clone();
+        let tx = tx2.clone();
+        let ansu = ansu.clone();
+        thread::spawn(move||{
+            //let mut count=0;
+            while let Ok(message) = rx.recv() {
+                let encoded = simple_encode(&ansu, &message);
+                let probability = probability_of_message(&ansu, &message);
+
+                tx.send( (probability, encoded) ).unwrap();
+                //count+=1;
+            }
+            //println!("thread processed {} messages", count);
+        })
+    }).collect();
+
+    let result = thread::spawn(move ||{
+        let mut list = Vec::new();
+        let mut sum_bits = 0f64;
+        let mut sum_prob = 0f64;
+        while let Ok((probability,encoded)) = rx2.recv() {
+            let num_encoded_bits = (1.max(encoded) as f64).log2();
+            sum_bits += probability * num_encoded_bits;
+            sum_prob += probability;
+            if sum_bits.is_nan() {
+                panic!("sum_bits += {} * {}", probability, num_encoded_bits);
+            }
+            if sum_prob.is_nan() {
+                panic!("sum_prob += {}", probability);
+            }
+            list.push((probability, encoded));
+        }
+        //println!("sum_bits={}; sum_prob={}", sum_bits, sum_prob);
+        (list, sum_bits, sum_prob)
+    });
+
+    for message in messages {
+        tx1.send(message).unwrap();
+    }
+
+    drop (tx1);
+    drop(tx2);
+
+    result.join().unwrap()
+
+}
+
+fn multi_threaded_encode_loop_2(messages: &[Vec<u8>], ansu: &ANSTableUniform) -> (Vec<(f64, u64)>, f64, f64) {
+
+    let mut num_threads=8;
+
+    let mut work = messages;
+    let mut workers = Vec::new();
+    while !work.is_empty() {
+        let quantum = (work.len() + num_threads - 1) / num_threads;
+        let (lhs, rhs) = work.split_at(quantum);
+        let span = lhs.to_vec();
+        let ansu = ansu.clone();
+        let handle = thread::spawn(move || {
+            let mut list = Vec::new();
+            let mut sum_bits = 0f64;
+            let mut sum_prob = 0f64;
+            for message in span {
+                let encoded = simple_encode(&ansu, &message);
+                let probability = probability_of_message(&ansu, &message);
+                let num_encoded_bits = (1.max(encoded) as f64).log2();
+                sum_bits += probability * num_encoded_bits;
+                sum_prob += probability;
+                if sum_bits.is_nan() {
+                    panic!("sum_bits += {} * {}", probability, num_encoded_bits);
+                }
+                if sum_prob.is_nan() {
+                    panic!("sum_prob += {}", probability);
+                }
+                list.push((probability, encoded));
+            }
+            //println!("sum_bits={}; sum_prob={}", sum_bits, sum_prob);
+            (list, sum_bits, sum_prob)
+        });
+        workers.push(handle);
+        work = rhs;
+        num_threads -=1;
+    }
+
+    let mut list = Vec::new();
+    let mut sum_bits = 0f64;
+    let mut sum_prob = 0f64;
+    for worker in workers {
+        let (mut piece, partial_sum_bits,partial_sum_prob) = worker.join().unwrap();
+        list.append(&mut piece);
+        sum_bits += partial_sum_bits;
+        sum_prob += partial_sum_prob;
+    }
+
+    (list, sum_bits, sum_prob)
 }
 
 fn fname_for_unweighted(src: &str) -> String {
