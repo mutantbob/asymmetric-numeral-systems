@@ -37,10 +37,13 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
+/// uniform table, phase=0
 pub fn quat_encoder_a() -> ANSTableUniform {
     let freqs = quat_frequencies();
     let rval = ANSTableUniform::new(freqs);
-    debug_dump(&rval);
+    if false {
+        debug_dump(&rval);
+    }
     rval
 }
 
@@ -48,7 +51,7 @@ pub fn quat_encoder_a() -> ANSTableUniform {
 pub fn quat_encoder_b() -> ANSTableUniform {
     let freqs = quat_frequencies();
     let sum_frequencies = freqs.frequencies.iter().sum();
-    let encode = generate_range_encoder_increasing(&freqs);
+    let encode = generate_range_encoder_semidecreasing(&freqs);
     let rval = ANSTableUniform {
         frequencies: freqs.frequencies,
         sum_frequencies,
@@ -84,11 +87,13 @@ pub fn quat_encoder_c() -> ANSTableUniform {
     let rval = ANSTableUniform {
         frequencies: freqs.frequencies,
         sum_frequencies,
-        encode: generate_range_encoder_semidecreasing(&freqs),
+        encode: generate_range_encoder_increasing(&freqs),
         decode: vec![], // unused
         verbose: false,
     };
-    debug_dump(&rval);
+    if false {
+        debug_dump(&rval);
+    }
     rval
 }
 
@@ -110,6 +115,7 @@ fn generate_range_encoder_semidecreasing(freqs: &SymbolFrequencies) -> Vec<Vec<u
     encode
 }
 
+/// uniform encoder, but all the "next" values are flipped
 fn quat_encoder_d() -> ANSTableUniform {
     let freqs = quat_frequencies();
     let mut rval = ANSTableUniform::new(freqs);
@@ -119,14 +125,18 @@ fn quat_encoder_d() -> ANSTableUniform {
         }
         per_symbol.sort();
     }
-    debug_dump(&rval);
+    if false {
+        debug_dump(&rval);
+    }
     rval
 }
 
+/// uniform encoder, but phase=sum/2
 fn quat_encoder_e() -> ANSTableUniform {
     let freqs = quat_frequencies();
     let sum_frequencies = freqs.frequencies.iter().sum();
-    let (encode, decode) = ANSTableUniform::build_tables(&freqs.frequencies, sum_frequencies, 0);
+    let (encode, decode) =
+        ANSTableUniform::build_tables(&freqs.frequencies, sum_frequencies, sum_frequencies / 2);
     let rval = ANSTableUniform {
         frequencies: freqs.frequencies,
         sum_frequencies,
@@ -134,10 +144,13 @@ fn quat_encoder_e() -> ANSTableUniform {
         decode,
         verbose: false,
     };
-    debug_dump(&rval);
+    if false {
+        debug_dump(&rval);
+    }
     rval
 }
 
+/// weird uniform table
 fn quat_encoder_f() -> ANSTableUniform {
     let freqs = quat_frequencies();
     let sum_frequencies = freqs.frequencies.iter().sum();
@@ -154,6 +167,8 @@ fn quat_encoder_f() -> ANSTableUniform {
         decode: vec![], // unused
         verbose: false,
     };
-    debug_dump(&rval);
+    if false {
+        debug_dump(&rval);
+    }
     rval
 }

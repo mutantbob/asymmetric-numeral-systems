@@ -74,7 +74,7 @@ impl ANSTableUniform {
         //println!("sum_frequencies = {}", sum_frequencies);
 
         let (transforms, backward) =
-            ANSTableUniform::build_tables(&frequencies, sum_frequencies, sum_frequencies / 2);
+            ANSTableUniform::build_tables(&frequencies, sum_frequencies, 0);
 
         ANSTableUniform {
             frequencies,

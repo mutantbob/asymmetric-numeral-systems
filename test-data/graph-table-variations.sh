@@ -10,9 +10,9 @@ set ylabel "numerical encoding result"
 set logscale y
 
 set output '$out'
-plot [] '/tmp/qa.txt' with lines title "uniform", '/tmp/qc.txt' with lines title "ranged by prevalence", '/tmp/qb.txt' with lines title "ranged backwards", 4**10 title "unencoded"
+plot [] [1e3:1e7] '/tmp/qa.txt' with lines title "uniform", '/tmp/qc.txt' with lines title "ranged by prevalence", '/tmp/qb.txt' with lines title "ranged backwards", 4**10 title "unencoded"
 
 set output '$out2'
-plot [] '/tmp/qa.txt' with lines title "uniform", '/tmp/qe.txt' with lines title "old uniform", '/tmp/qf.txt' with lines title "weird", '/tmp/qb.txt' with lines title "ranged backwards", 4**10 title "unencoded"
+plot [] [1e3:1e7] '/tmp/qa.txt' with lines title "uniform", '/tmp/qc.txt' with lines title "ranged by prevalence",'/tmp/qe.txt' with lines title "old uniform",  4**10 title "unencoded", '/tmp/qf.txt' with lines title "weird"
 
 EOF
