@@ -12,13 +12,13 @@ use std::error::Error;
 
 pub fn catalog_encoding_results(
     messages: &mut dyn Iterator<Item = Vec<u8>>,
-    ansu: &ANSTableUniform,
+    ansu: ANSTableUniform,
     output_filename: &str,
 ) -> Result<(f64,String), Box<dyn Error>> {
     let mut report = String::new();
     let (mut list, sum_bits, sum_prob) = match 2 {
-        0=> single_threaded_encode_loop(messages, ansu),
-        1=> multi_threaded_encode_loop(messages, ansu),
+        0=> single_threaded_encode_loop(messages, &ansu),
+        1=> multi_threaded_encode_loop(messages, &ansu),
         _=> multi_threaded_encode_loop_2(&messages.collect::<Vec<Vec<u8>>>(), ansu),
     };
 
@@ -124,18 +124,22 @@ fn multi_threaded_encode_loop(messages: &mut dyn Iterator<Item=Vec<u8>>, ansu: &
 
 }
 
-fn multi_threaded_encode_loop_2(messages: &[Vec<u8>], ansu: &ANSTableUniform) -> (Vec<(f64, u64)>, f64, f64) {
+fn multi_threaded_encode_loop_2(messages: &[Vec<u8>], ansu: ANSTableUniform) -> (Vec<(f64, u64)>, f64, f64) {
+    use std::sync::{RwLock,Arc};
 
     let mut num_threads=8;
 
     let mut work = messages;
     let mut workers = Vec::new();
+    let ansu_lock = Arc::new(RwLock::new(ansu));
+
     while !work.is_empty() {
         let quantum = (work.len() + num_threads - 1) / num_threads;
         let (lhs, rhs) = work.split_at(quantum);
         let span = lhs.to_vec();
-        let ansu = ansu.clone();
+        let ansu = ansu_lock.clone();
         let handle = thread::spawn(move || {
+            let ansu = ansu.read().unwrap();
             let mut list = Vec::new();
             let mut sum_bits = 0f64;
             let mut sum_prob = 0f64;

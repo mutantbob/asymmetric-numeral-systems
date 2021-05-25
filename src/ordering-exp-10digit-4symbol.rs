@@ -23,7 +23,7 @@ fn main() -> Result<(), Error> {
         .into_iter()
         .map(|(encoder, fname)| {
             thread::spawn(move || {
-                catalog_encoding_results(&mut quaternary_message_list(num_quats), &encoder(), fname)
+                catalog_encoding_results(&mut quaternary_message_list(num_quats), encoder(), fname)
                     .unwrap()
             })
         })

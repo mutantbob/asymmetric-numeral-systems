@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 let report = catalog_encoding_results(
                     &mut quaternary_message_list(num_quats),
-                    &ansu,
+                    ansu,
                     &format!("/tmp/q{}.txt", phase),
                 )
                 .unwrap();

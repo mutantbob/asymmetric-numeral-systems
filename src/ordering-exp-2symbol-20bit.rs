@@ -9,19 +9,19 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     catalog_encoding_results(
         &mut binary_message_list(num_bits),
-        &polarity_a(),
+        polarity_a(),
         "/tmp/a.txt",
     )?;
 
     catalog_encoding_results(
         &mut binary_message_list(num_bits),
-        &polarity_b(),
+        polarity_b(),
         "/tmp/b.txt",
     )?;
 
     catalog_encoding_results(
         &mut binary_message_list(num_bits),
-        &polarity_c(),
+        polarity_c(),
         "/tmp/c.txt",
     )?;
 
