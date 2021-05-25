@@ -9,9 +9,9 @@ set xlabel "all possible messages, sorted by result"
 set output '$out'
 set ylabel "variance in logarithm of encoded result"
 plot '/tmp/ra.txt' with lines title 'uniform',\
+'/tmp/rb.txt' with lines title 'ranged by prevalence',\
 '/tmp/re.txt' with lines title 'old uniform',\
-'/tmp/rc.txt' with lines title 'ranged by prevalence',\
-'/tmp/rb.txt' with lines title 'ranged backwards',\
+'/tmp/rc.txt' with lines title 'ranged backwards',\
 '/tmp/rf.txt' with lines title 'weird'
 
 EOF
